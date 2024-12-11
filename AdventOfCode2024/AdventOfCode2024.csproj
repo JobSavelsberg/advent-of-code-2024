@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Add all .txt files (not in bin or obj) to output-->
+  <ItemGroup>
+    <Content Include="**\*.txt" Exclude="bin\**;obj\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

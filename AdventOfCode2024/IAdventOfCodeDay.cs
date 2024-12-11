@@ -1,0 +1,3 @@
+interface IAdventOfCodeDay{
+    void Solve();
+}
