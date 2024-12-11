@@ -1,56 +1,69 @@
+using System.Data;
+using System.Numerics;
+
 public class Day11 : IAdventOfCodeDay
 {
-    LinkedList<long> stones = new();
-    readonly int numberOfIterations = 25;
+    readonly int numberOfIterations = 75;
+
+    // For each stone, keep track of how many stones it will become after a certain number of iterations
+    readonly Dictionary<BigInteger, long[]> stoneBlinkCount = [];
     
     public void Solve()
     {
-        // stones = new LinkedList<int>([0, 1, 10, 99, 999]);
-        // stones = new LinkedList<int>([125, 17]);
-        stones = new LinkedList<long>([773, 79858, 0, 71, 213357, 2937, 1, 3998391]);
+        //long[] stones  = new LinkedList<int>([0, 1, 10, 99, 999]);
+        //long[] stones = [125, 17];
+        long[] stones = [773, 79858, 0, 71, 213357, 2937, 1, 3998391];
 
-        List<LinkedListNode<long>> stoneNodes = [];
-        for(var stone = stones.First; stone != null; stone = stone.Next) {
-            stoneNodes.Add(stone);
-        }
+        var answer  = stones.Sum(stone => CalculateNumberOfStones(stone, numberOfIterations));
 
-        foreach(var stone in stoneNodes) {
-            Blink(stone, numberOfIterations);
-        }
-        
-        // Print the stones
-        // foreach (var stone in stones) {
-        //     Console.WriteLine(stone);
-        // }
-        Console.WriteLine(stones.Count);
+        Console.WriteLine($"The total number of stones after {numberOfIterations} iterations is {answer}");
     }
 
-    private void Blink(LinkedListNode<long> stone, int iterationsLeft) {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stone"></param>
+    /// <param name="iterationsLeft"></param>
+    /// <returns>Number of stones the current stone will become after number of iterations left</returns>
+    private long CalculateNumberOfStones(BigInteger stone, int iterationsLeft) {
         if(iterationsLeft == 0) {
-            return;
+            return 1;
+        }
+
+        if(stoneBlinkCount.ContainsKey(stone) && stoneBlinkCount[stone][iterationsLeft - 1] > 0){
+                return stoneBlinkCount[stone][iterationsLeft - 1];
         }else{
-            iterationsLeft--;
-        }
+            // blink
+            var newIterationsLeft = iterationsLeft - 1;
+            long fullStonesCount;
 
-        if (stone.Value == 0) {
-            stone.Value = 1;
-            Blink(stone, iterationsLeft);
-            return;
-        }
+            if (stone == 0)
+            {
+                fullStonesCount = CalculateNumberOfStones(1, newIterationsLeft);
+            }
+            else
+            {
+                var stoneDigits = (long)Math.Floor(Math.Log10((double)stone)) + 1;
+                if (stoneDigits % 2 == 0)
+                {
+                    var stoneFirstHalf = (long)((double)stone / Math.Pow(10, stoneDigits / 2));
+                    var stoneSecondHalf = (long)((double)stone % Math.Pow(10, stoneDigits / 2));
+                    var firstStone = CalculateNumberOfStones(stoneFirstHalf, newIterationsLeft);
+                    var secondStone = CalculateNumberOfStones(stoneSecondHalf, newIterationsLeft);
+                    fullStonesCount = firstStone + secondStone;
+                }
+                else
+                {
+                    fullStonesCount = CalculateNumberOfStones(stone*2024, iterationsLeft - 1);
+                }
+            }
 
-        var stoneString = stone.Value.ToString();
-        if(stoneString.Length % 2 == 0) {
-            stone.Value = long.Parse(stoneString[..(stoneString.Length / 2)]);
-            var newStone = new LinkedListNode<long>(long.Parse(stoneString[(stoneString.Length / 2)..]));
-            // insert into linked list after stone
-            stones.AddAfter(stone, newStone);
-            Blink(stone, iterationsLeft);
-            Blink(newStone, iterationsLeft);
-            return;
+            // Update memoization
+            if(!stoneBlinkCount.ContainsKey(stone)){
+                stoneBlinkCount[stone] = new long[numberOfIterations];
+            }
+            stoneBlinkCount[stone][newIterationsLeft] = fullStonesCount;
+            return fullStonesCount;
         }
-
-        stone.Value *= 2024;
-        Blink(stone, iterationsLeft);
-        return;
     }
 }
