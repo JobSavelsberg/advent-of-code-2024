@@ -5,10 +5,10 @@ using System.Reflection;
 var dayTypes = Assembly.GetExecutingAssembly().GetTypes()
     .Where(t => t.GetInterfaces().Contains(typeof(IAdventOfCodeDay)));
 
-var dayNumber = 12;
+var dayNumber = 1;
 
 // Find the class with the day number
-var dayType = dayTypes.FirstOrDefault(t => t.Name.Contains($"Day{dayNumber}"));
+var dayType = dayTypes.FirstOrDefault(t => t.Name == $"Day{dayNumber}");
 
 if(dayType == null)
 {
