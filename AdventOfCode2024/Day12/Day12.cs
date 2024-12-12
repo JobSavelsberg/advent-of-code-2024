@@ -11,11 +11,11 @@ public class Day12 : IAdventOfCodeDay
     private Dictionary<int, char> regionIdToPlant;
     private Dictionary<int, int> regionIdToArea;
     private Dictionary<int, int> regionIdToFenceCount;
-    
-    
+
+
     public Day12()
     {
-                // Can we make the assumption it is square?
+        // Can we make the assumption it is square?
         var fileName = "./Day12/input.txt";
         gardenPlants = ReadGardenFromFile(fileName);
         gardenRegionIds = new int[gardenPlants.GetLength(0), gardenPlants.GetLength(1)];
@@ -25,8 +25,170 @@ public class Day12 : IAdventOfCodeDay
         regionIdToFenceCount = new Dictionary<int, int>();
 
     }
-    public void Solve()
+    public void Solve() {
+        SolvePart2();
+    }
+
+    public void SolvePart1()
     {
+        FillRegionMap();
+
+        // Now area and fence count can be calculated per regionId
+        for (var y = 0; y < gardenPlants.GetLength(0); y++)
+        {
+            for (var x = 0; x < gardenPlants.GetLength(1); x++)
+            {
+                var fences = 0;
+                var currentRegionId = gardenRegionIds[x, y];
+
+                // Check for each side for a boundary
+
+                // Top
+                if (y == 0 || gardenRegionIds[x, y - 1] != currentRegionId) {
+                    fences++;
+                }
+
+                // Left
+                if (x == 0 || gardenRegionIds[x - 1, y] != currentRegionId) {
+                    fences++;
+                }
+
+                // Right
+                if (x == gardenPlants.GetLength(0) - 1 || gardenRegionIds[x + 1, y] != currentRegionId) {
+                    fences++;
+                }
+
+                // Bottom
+                if (y == gardenPlants.GetLength(1) - 1 || gardenRegionIds[x, y + 1] != currentRegionId) {
+                    fences++;
+                }
+
+                if (!regionIdToArea.ContainsKey(currentRegionId))
+                {
+                    regionIdToArea[currentRegionId] = 0;
+                }
+
+                if (!regionIdToFenceCount.ContainsKey(currentRegionId)) {
+                    regionIdToFenceCount[currentRegionId] = 0;
+                }
+
+                regionIdToArea[currentRegionId]++;
+                regionIdToFenceCount[currentRegionId] += fences;
+            }
+        }
+
+        var plantCost = new Dictionary<char, int>();
+
+        // Now sum all regionIds to their corresponding plant
+        foreach (var regionId in regionIdToPlant.Keys)
+        {
+            var plant = regionIdToPlant[regionId];
+            var fences = regionIdToFenceCount[regionId];
+            var area = regionIdToArea[regionId];
+
+            if (!plantCost.ContainsKey(plant)) {
+                plantCost[plant] = 0;
+            }
+
+            plantCost[plant] += fences * area;
+        }
+
+        var totalCost = plantCost.Values.Sum();
+
+        Console.WriteLine(totalCost);
+    }
+
+    public void SolvePart2() {
+
+        // Calculation region map
+        FillRegionMap();
+
+        var width = gardenPlants.GetLength(0);
+        var height = gardenPlants.GetLength(1);
+
+        // Create fence count for each region
+        foreach (var regionId in regionIdToPlant.Keys)
+        {
+            regionIdToFenceCount[regionId] = 0;
+        }
+
+        SweepSideCount(true);
+        SweepSideCount(false);
+
+        // Fill area
+        for(var x = 0; x < width; x++){
+            for(var y = 0; y < height; y++){
+                var regionId = gardenRegionIds[x, y];
+                if(!regionIdToArea.ContainsKey(regionId)){
+                    regionIdToArea[regionId] = 0;
+                }
+                regionIdToArea[regionId]++;
+            }
+        }
+
+        var plantCost = new Dictionary<char, int>();
+
+        // Now sum all regionIds to their corresponding plant
+        foreach (var regionId in regionIdToPlant.Keys)
+        {
+            var plant = regionIdToPlant[regionId];
+            var fences = regionIdToFenceCount[regionId];
+            var area = regionIdToArea[regionId];
+
+            if (!plantCost.ContainsKey(plant)) {
+                plantCost[plant] = 0;
+            }
+
+            plantCost[plant] += fences * area;
+        }
+
+        var totalCost = plantCost.Values.Sum();
+
+        Console.WriteLine(totalCost);
+
+    }
+
+    private void SweepSideCount(bool horizontal){
+        var sizePrimary = horizontal ? gardenPlants.GetLength(0) : gardenPlants.GetLength(1);
+        var sizeSecondary = horizontal ? gardenPlants.GetLength(1) : gardenPlants.GetLength(0);
+
+         // Sweep from left to right
+        for(var i = -1; i < sizePrimary; i++){
+            var prevRegionIdCurrent = -1;
+            var prevRegionIdNext = -1;
+
+            for(var j = 0; j < sizeSecondary; j++){
+                var regionIdCurrent = i >= 0 ? horizontal ? gardenRegionIds[i, j] : gardenRegionIds[j, i] : -1;
+                var regionIdNext = i < sizePrimary - 1 ?  horizontal ? gardenRegionIds[i + 1, j] : gardenRegionIds[j, i + 1] : -1;
+
+                if(regionIdCurrent == regionIdNext){
+                    // Reset the previous region id because we know that in the next increment
+                    // Either we have the same situation (in which case it doesn't matter what prev was)
+                    // Or we have a start of a new crossover (meaning new sides)
+                    prevRegionIdCurrent = -1;
+                    prevRegionIdNext = -1;
+                    continue;
+                }
+
+                // We can assume there is a fence in between now
+
+                // If either side sees a new region, this will be a new side
+
+                if(regionIdCurrent != prevRegionIdCurrent){
+                    regionIdToFenceCount[regionIdCurrent]++;
+                }
+
+                if(regionIdNext != prevRegionIdNext){
+                    regionIdToFenceCount[regionIdNext]++;
+                }
+
+                prevRegionIdCurrent = regionIdCurrent;
+                prevRegionIdNext = regionIdNext;
+            }
+        }
+    }
+
+    private void FillRegionMap() {
         for (var y = 0; y < gardenPlants.GetLength(0); y++)
         {
             for (var x = 0; x < gardenPlants.GetLength(1); x++)
@@ -46,71 +208,8 @@ public class Day12 : IAdventOfCodeDay
                 regionIdToPlant[gardenRegionIds[x, y]] = gardenPlants[x, y];
             }
         }
-
-        // Now area and fence count can be calculated per regionId
-        for (var y = 0; y < gardenPlants.GetLength(0); y++)
-        {
-            for (var x = 0; x < gardenPlants.GetLength(1); x++)
-            {
-                var fences = 0;
-                var currentRegionId = gardenRegionIds[x, y];
-
-                // Check for each side for a boundary
-
-                // Top
-                if(y == 0 || gardenRegionIds[x, y-1] != currentRegionId){
-                    fences++;
-                }
-
-                // Left
-                if(x == 0 || gardenRegionIds[x-1, y] != currentRegionId){
-                    fences++;
-                }
-
-                // Right
-                if(x == gardenPlants.GetLength(0) - 1 || gardenRegionIds[x+1, y] != currentRegionId){
-                    fences++;
-                }
-
-                // Bottom
-                if(y == gardenPlants.GetLength(1) - 1 || gardenRegionIds[x, y+1] != currentRegionId){
-                    fences++;
-                }
-
-                if (!regionIdToArea.ContainsKey(currentRegionId))
-                {
-                    regionIdToArea[currentRegionId] = 0;
-                }
-
-                if(!regionIdToFenceCount.ContainsKey(currentRegionId)){
-                    regionIdToFenceCount[currentRegionId] = 0;
-                }
-
-                regionIdToArea[currentRegionId]++;
-                regionIdToFenceCount[currentRegionId] += fences;
-            }
-        }
-
-        var plantCost = new Dictionary<char, int>();
-
-        // Now sum all regionIds to their corresponding plant
-        foreach (var regionId in regionIdToPlant.Keys)
-        {
-            var plant = regionIdToPlant[regionId];
-            var fences = regionIdToFenceCount[regionId];
-            var area = regionIdToArea[regionId];
-
-            if(!plantCost.ContainsKey(plant)){
-                plantCost[plant] = 0;
-            }
-
-            plantCost[plant] += fences * area;
-        }
-
-        var totalCost = plantCost.Values.Sum();
-
-        Console.WriteLine(totalCost);       
     }
+
 
 
     // Assumes we have have looked up all values for x-1 and y-1
@@ -176,10 +275,7 @@ public class Day12 : IAdventOfCodeDay
         }
         return newRegionId;
     }
-
-
-
-
+  
     private int GenerateNewRegionId(int x, int y)
     {
         return x + y * gardenPlants.GetLength(0);
