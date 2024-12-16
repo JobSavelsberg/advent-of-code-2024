@@ -8,7 +8,6 @@ public class Day3 : IAdventOfCodeDay
         var inputLines = File.ReadAllLines(fileName);
         var inputString = string.Join("", inputLines);
 
-        var mulRegex = new Regex(@"mul\((\d+),(\d+)\)");
         var sumDo = 0;
         var sumAll = 0;
         var doLines = inputString.Split("do()").ToList();
